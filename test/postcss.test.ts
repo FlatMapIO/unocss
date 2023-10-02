@@ -1,6 +1,5 @@
-/* eslint-disable unused-imports/no-unused-imports */
 import type { UserConfig } from '@unocss/core'
-import { createGenerator, escapeSelector } from '@unocss/core'
+import { escapeSelector } from '@unocss/core'
 import presetWind from '@unocss/preset-wind'
 import postcssPlugin from '@unocss/postcss'
 import { describe, expect, test } from 'vitest'
@@ -8,6 +7,15 @@ import postcss from 'postcss'
 import { presetWindTargets } from './assets/preset-wind-targets'
 
 const config: UserConfig = {
+  content: {
+    filesystem: [
+      './test/assets/preset-wind-targets.ts',
+    ],
+    inline: [{
+      code: presetWindTargets.join(' '),
+      id: 'targets.html',
+    }],
+  },
   presets: [
     presetWind({
       dark: 'media',
@@ -42,22 +50,28 @@ function pcss() {
       content: [
         './test/assets/preset-wind-targets.ts',
         {
-          raw: presetWindTargets.join(' '), extension: 'html',
+          raw: presetWindTargets.join(' '),
+          extension: 'html',
         },
       ],
       configOrPath: config,
-    }))
+    }),
+  )
 }
 
 function pcssLite() {
   return postcss(
     postcssPlugin({
-      content: [
-        {
-          raw: '<div class="relative p4 test example">', extension: 'html',
+      configOrPath: {
+        content: {
+          filesystem: [],
+          inline: [
+            {
+              code: '<div class="relative p4 test example">',
+              id: 'inline.html',
+            },
+          ],
         },
-      ],
-      configOrPath: <UserConfig>{
         presets: [
           presetWind(),
           {
@@ -69,8 +83,9 @@ function pcssLite() {
         shortcuts: {
           test: 'p5',
         },
-      },
-    }))
+      } as UserConfig,
+    }),
+  )
 }
 
 const file = 'style.css'
@@ -103,14 +118,21 @@ describe('postcss', () => {
     expect(css).toMatchSnapshot()
   })
 
-  test('@apply', async () => {
-    const { css } = await pcssLite().process('div{@apply bg-red hover:text-white dark:hover:[&>:focus]:text-[20px];}', processOptions)
+  describe('@apply', () => {
+    test('basic', async () => {
+      const { css } = await pcssLite().process('div{@apply bg-red hover:text-white dark:hover:[&>:focus]:text-[20px];}', processOptions)
 
-    expect(css).toMatchSnapshot()
+      expect(css).toMatchSnapshot()
+    })
+
+    test('media', async () => {
+      const { css } = await pcssLite().process('div{@apply sm:bg-red lg:bg-pink xl:bg-white md:bg-blue}', processOptions)
+      expect(css).toMatchSnapshot()
+    })
   })
 
   test('theme()', async () => {
-    const { css } = await pcssLite().process('div{color:theme(\'colors.red.600\')}', processOptions)
+    const { css } = await pcssLite().process('div{color:theme(\'colors.red.600\');background-color:theme(\'colors.red.600 / 50%\')}', processOptions)
 
     expect(css).toMatchSnapshot()
   })

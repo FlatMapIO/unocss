@@ -1,10 +1,11 @@
 import path from 'path'
-import type { DecorationOptions, ExtensionContext, StatusBarItem } from 'vscode'
+import type { DecorationOptions, Disposable, ExtensionContext, StatusBarItem, TextEditor } from 'vscode'
 import { DecorationRangeBehavior, MarkdownString, Range, window, workspace } from 'vscode'
 import { INCLUDE_COMMENT_IDE, getMatchedPositionsFromCode, isCssId } from './integration'
 import { log } from './log'
 import { getColorString, getPrettiedMarkdown, isSubdir, throttle } from './utils'
 import type { ContextLoader } from './contextLoader'
+import { useConfigurations } from './configuration'
 
 export async function registerAnnotations(
   cwd: string,
@@ -12,21 +13,15 @@ export async function registerAnnotations(
   status: StatusBarItem,
   ext: ExtensionContext,
 ) {
-  let underline: boolean = workspace.getConfiguration().get('unocss.underline') ?? true
-  let colorPreview: boolean = workspace.getConfiguration().get('unocss.colorPreview') ?? true
+  const { configuration, watchChanged, disposable } = useConfigurations(ext)
+  const disposals: Disposable[] = []
+  watchChanged(['underline', 'colorPreview', 'remToPxPreview', 'remToPxRatio'], () => {
+    updateAnnotation()
+  })
 
-  ext.subscriptions.push(workspace.onDidChangeConfiguration((event) => {
-    if (event.affectsConfiguration('unocss.underline')) {
-      underline = workspace.getConfiguration().get('unocss.underline') ?? true
-      updateAnnotation()
-    }
-    if (event.affectsConfiguration('unocss.colorPreview')) {
-      colorPreview = workspace.getConfiguration().get('unocss.colorPreview') ?? true
-      updateAnnotation()
-    }
-  }))
+  disposals.push(disposable)
 
-  workspace.onDidSaveTextDocument(async (doc) => {
+  disposals.push(workspace.onDidSaveTextDocument(async (doc) => {
     const id = doc.uri.fsPath
     const dir = path.dirname(id)
 
@@ -43,7 +38,7 @@ export async function registerAnnotations(
         log.appendLine(String(e.stack ?? e))
       }
     }
-  })
+  }))
 
   const UnderlineDecoration = window.createTextEditorDecorationType({
     textDecoration: 'none; border-bottom: 1px dashed currentColor',
@@ -79,15 +74,15 @@ export async function registerAnnotations(
     try {
       const doc = editor?.document
       if (!doc)
-        return reset()
+        return reset(editor)
 
       const id = doc.uri.fsPath
       if (!isSubdir(cwd, id))
-        return reset()
+        return reset(editor)
 
       const code = doc.getText()
       if (!code)
-        return reset()
+        return reset(editor)
 
       let ctx = await contextLoader.resolveContext(code, id)
       if (!ctx)
@@ -99,20 +94,24 @@ export async function registerAnnotations(
         || isCssId(id) // include css files
 
       if (!isTarget)
-        return reset()
+        return reset(editor)
 
       const result = await ctx.uno.generate(code, { id, preflights: false, minify: true })
 
       const colorRanges: DecorationOptions[] = []
+
+      const remToPxRatio = configuration.remToPxPreview
+        ? configuration.remToPxRatio
+        : -1
 
       const ranges: DecorationOptions[] = (
         await Promise.all(
           (await getMatchedPositionsFromCode(ctx.uno, code))
             .map(async (i): Promise<DecorationOptions> => {
               try {
-                const md = await getPrettiedMarkdown(ctx!.uno, i[2])
+                const md = await getPrettiedMarkdown(ctx!.uno, i[2], remToPxRatio)
 
-                if (colorPreview) {
+                if (configuration.colorPreview) {
                   const color = getColorString(md)
                   if (color && !colorRanges.find(r => r.range.start.isEqual(doc.positionAt(i[0])))) {
                     colorRanges.push({
@@ -139,7 +138,7 @@ export async function registerAnnotations(
 
       editor.setDecorations(colorDecoration, colorRanges)
 
-      if (underline) {
+      if (configuration.underline) {
         editor.setDecorations(NoneDecoration, [])
         editor.setDecorations(UnderlineDecoration, ranges)
       }
@@ -151,13 +150,6 @@ export async function registerAnnotations(
       status.text = `UnoCSS: ${result.matched.size}`
       status.tooltip = new MarkdownString(`${result.matched.size} utilities used in this file`)
       status.show()
-
-      function reset() {
-        editor?.setDecorations(UnderlineDecoration, [])
-        editor?.setDecorations(NoneDecoration, [])
-        editor?.setDecorations(colorDecoration, [])
-        status.hide()
-      }
     }
     catch (e: any) {
       log.appendLine('⚠️ Error on annotation')
@@ -165,15 +157,27 @@ export async function registerAnnotations(
     }
   }
 
+  function reset(editor?: TextEditor) {
+    editor?.setDecorations(UnderlineDecoration, [])
+    editor?.setDecorations(NoneDecoration, [])
+    editor?.setDecorations(colorDecoration, [])
+    status.hide()
+  }
+
   const throttledUpdateAnnotation = throttle(updateAnnotation, 200)
 
-  window.onDidChangeActiveTextEditor(updateAnnotation)
-  workspace.onDidChangeTextDocument((e) => {
+  disposals.push(window.onDidChangeActiveTextEditor(updateAnnotation))
+  disposals.push(workspace.onDidChangeTextDocument((e) => {
     if (e.document === window.activeTextEditor?.document)
       throttledUpdateAnnotation()
-  })
+  }))
   contextLoader.events.on('reload', async () => {
     await updateAnnotation()
+  })
+
+  contextLoader.events.on('unload', async () => {
+    reset(window.activeTextEditor)
+    disposals.forEach(disposal => disposal.dispose())
   })
 
   await updateAnnotation()

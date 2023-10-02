@@ -1,5 +1,5 @@
 {
-  "name": "unocss-nextjs",
+  "name": "unocss-next",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,22 +8,20 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "13.4.1",
+    "next": "13.5.3",
     "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "unocss-nextjs": "link:"
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
-    "@iconify-json/carbon": "^1.1.16",
-    "@types/node": "18.16.4",
-    "@types/react": "18.2.5",
-    "@types/react-dom": "18.2.4",
-    "@unocss/preset-attributify": "link:../../packages/preset-attributify",
-    "@unocss/reset": "link:../../packages/reset",
-    "@unocss/webpack": "link:../../packages/webpack",
-    "eslint": "8.39.0",
-    "eslint-config-next": "13.4.1",
-    "typescript": "5.0.4",
-    "unocss": "link:../../packages/unocss"
+    "@iconify-json/lucide": "^1.1.129",
+    "@types/node": "20.7.0",
+    "@types/react": "18.2.22",
+    "@types/react-dom": "18.2.7",
+    "@unocss/postcss": "latest",
+    "eslint": "8.50.0",
+    "eslint-config-next": "13.5.3",
+    "postcss": "8.4.30",
+    "typescript": "5.2.2",
+    "unocss": "latest"
   }
 }

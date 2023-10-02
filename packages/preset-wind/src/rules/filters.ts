@@ -1,6 +1,6 @@
 import type { CSSValues, Rule, RuleContext } from '@unocss/core'
 import type { Theme } from '@unocss/preset-mini'
-import { colorResolver, colorableShadows, globalKeywords, handler as h } from '@unocss/preset-mini/utils'
+import { colorResolver, colorableShadows, globalKeywords, h } from '@unocss/preset-mini/utils'
 import { varEmpty } from '@unocss/preset-mini/rules'
 
 export const filterBase = {
@@ -35,7 +35,7 @@ function percentWithDefault(str?: string) {
     return v
 
   v = str ? h.percent(str) : '1'
-  if (v != null && parseFloat(v) <= 1)
+  if (v != null && Number.parseFloat(v) <= 1)
     return v
 }
 
@@ -87,11 +87,19 @@ export const filters: Rule<Theme>[] = [
   // drop-shadow only on filter
   [/^(?:filter-)?drop-shadow(?:-(.+))?$/, dropShadowResolver, {
     autocomplete: [
-      'filter-drop', 'filter-drop-shadow', 'filter-drop-shadow-color', 'drop-shadow', 'drop-shadow-color',
-      'filter-drop-shadow-$dropShadow', 'drop-shadow-$dropShadow',
-      'filter-drop-shadow-color-$colors', 'drop-shadow-color-$colors',
-      'filter-drop-shadow-color-(op|opacity)', 'drop-shadow-color-(op|opacity)',
-      'filter-drop-shadow-color-(op|opacity)-<percent>', 'drop-shadow-color-(op|opacity)-<percent>',
+      'filter-drop',
+      'filter-drop-shadow',
+      'filter-drop-shadow-color',
+      'drop-shadow',
+      'drop-shadow-color',
+      'filter-drop-shadow-$dropShadow',
+      'drop-shadow-$dropShadow',
+      'filter-drop-shadow-color-$colors',
+      'drop-shadow-color-$colors',
+      'filter-drop-shadow-color-(op|opacity)',
+      'drop-shadow-color-(op|opacity)',
+      'filter-drop-shadow-color-(op|opacity)-<percent>',
+      'drop-shadow-color-(op|opacity)-<percent>',
     ],
   }],
   [/^(?:filter-)?drop-shadow-color-(.+)$/, colorResolver('--un-drop-shadow-color', 'drop-shadow')],

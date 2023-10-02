@@ -1,6 +1,6 @@
 {
   "name": "@unocss/preset-uno",
-  "version": "0.52.0",
+  "version": "0.56.4",
   "description": "The default preset for UnoCSS",
   "author": "Anthony Fu <anthonyfu117@hotmail.com>",
   "license": "MIT",
@@ -22,23 +22,23 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.cjs",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
     },
     "./theme": {
       "types": "./dist/theme.d.ts",
-      "require": "./dist/theme.cjs",
-      "import": "./dist/theme.mjs"
+      "import": "./dist/theme.mjs",
+      "require": "./dist/theme.cjs"
     },
     "./colors": {
       "types": "./dist/colors.d.ts",
-      "require": "./dist/colors.cjs",
-      "import": "./dist/colors.mjs"
+      "import": "./dist/colors.mjs",
+      "require": "./dist/colors.cjs"
     },
     "./utils": {
       "types": "./dist/utils.d.ts",
-      "require": "./dist/utils.cjs",
-      "import": "./dist/utils.mjs"
+      "import": "./dist/utils.mjs",
+      "require": "./dist/utils.cjs"
     },
     "./*": "./*"
   },
@@ -46,8 +46,8 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
-    "dist",
-    "*.css"
+    "*.css",
+    "dist"
   ],
   "scripts": {
     "build": "unbuild",
@@ -56,6 +56,7 @@
   "dependencies": {
     "@unocss/core": "workspace:*",
     "@unocss/preset-mini": "workspace:*",
-    "@unocss/preset-wind": "workspace:*"
+    "@unocss/preset-wind": "workspace:*",
+    "@unocss/rule-utils": "workspace:*"
   }
 }

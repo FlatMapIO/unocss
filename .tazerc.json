@@ -6,8 +6,10 @@
     "codemirror",
     "@vue/cli-plugin-babel",
     "@vue/cli-service",
-    "unbuild",
-    "msw"
+    "msw",
+    "prettier",
+    "prettier-plugin-svelte",
+    "@types/prettier"
   ],
   "packageMode": {
     "vue": "minor",

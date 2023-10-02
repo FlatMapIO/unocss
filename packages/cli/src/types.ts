@@ -7,6 +7,8 @@ export interface CliOptions {
   outFile?: string
   watch?: boolean
   config?: string
+  stdout?: boolean
+  writeTransformed?: boolean
 
   // generate options
   preflights?: boolean

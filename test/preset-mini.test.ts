@@ -144,8 +144,8 @@ describe('preset-mini', () => {
   test('none targets', async () => {
     const { css, matched } = await uno.generate(new Set(presetMiniNonTargets), { minify: true, preflights: false })
 
-    expect(css).toEqual('')
     expect([...matched]).toEqual([])
+    expect(css).toEqual('')
   })
 
   test('fontSize theme', async () => {
@@ -173,6 +173,29 @@ describe('preset-mini', () => {
     // @ts-expect-error types
     expect(uno.config.theme.fontSize.lg).toEqual(['3rem', '1.5em'])
     await expect(css).toMatchFileSnapshot('./assets/output/preset-mini-font-size-theme.css')
+  })
+
+  test('fontWeight theme', async () => {
+    const uno = createGenerator({
+      presets: [
+        presetMini(),
+      ],
+      theme: {
+        fontWeight: {
+          head: '900',
+          foot: '100',
+        },
+      },
+    })
+
+    const { css } = await uno.generate([
+      'font-head',
+      'font-foot',
+    ].join(' '), { preflights: false })
+
+    // @ts-expect-error types
+    expect(uno.config.theme.fontWeight.head).toEqual('900')
+    await expect(css).toMatchFileSnapshot('./assets/output/preset-mini-font-weight-theme.css')
   })
 
   test('dark class', async () => {
@@ -208,5 +231,97 @@ describe('preset-mini', () => {
     })
 
     await expect(css).toMatchFileSnapshot('./assets/output/preset-mini-active-pseudo.css')
+  })
+
+  test('css variable with `{` `}` will not generate css ', async () => {
+    const uno = createGenerator({
+      presets: [
+        presetMini(),
+      ],
+    })
+
+    const { css } = await uno.generate([
+      // eslint-disable-next-line no-template-curly-in-string
+      'c-${variable}',
+    ].join(' '), {
+      preflights: false,
+    })
+
+    expect(css).toBe('')
+  })
+
+  test('group data variant', async () => {
+    const uno = createGenerator({
+      presets: [
+        presetMini(),
+      ],
+    })
+
+    const { css } = await uno.generate([
+      'group-data-[state=open]:rotate-180',
+      'group-data-[state=open]:text-black',
+      'data-[state=open]:text-red',
+      'group-hover:font-bold',
+    ].join(' '), {
+      preflights: false,
+    })
+
+    await expect(css).toMatchFileSnapshot('./assets/output/preset-mini-group-data.css')
+  })
+
+  test('define breakpoints with other unit', async () => {
+    const uno = createGenerator({
+      presets: [
+        presetMini(),
+      ],
+      theme: {
+        breakpoints: {
+          md: '48rem',
+          lg: '64rem',
+          xl: '1000px',
+        },
+      },
+    })
+
+    const { css } = await uno.generate([
+      'md:text-xl',
+      '<lg:text-sm',
+      '~md:text-base',
+      '<xl:text-3xl',
+    ], { preflights: false })
+
+    expect(css).toMatchInlineSnapshot(`
+      "/* layer: default */
+      @media (max-width: 999.9px){
+      .\\\\<xl\\\\:text-3xl{font-size:1.875rem;line-height:2.25rem;}
+      }
+      @media (max-width: calc(64rem - 0.1px)){
+      .\\\\<lg\\\\:text-sm{font-size:0.875rem;line-height:1.25rem;}
+      }
+      @media (min-width: 48rem){
+      .md\\\\:text-xl{font-size:1.25rem;line-height:1.75rem;}
+      }
+      @media (min-width: 48rem) and (max-width: calc(64rem - 0.1px)){
+      .\\\\~md\\\\:text-base{font-size:1rem;line-height:1.5rem;}
+      }"
+    `)
+  })
+
+  test('theme for zIndex', async () => {
+    const uno = createGenerator({
+      presets: [
+        presetMini(),
+      ],
+      theme: {
+        zIndex: {
+          header: '500',
+        },
+      },
+    })
+    expect((await uno.generate('z-header', { preflights: false })).css)
+      .toMatchInlineSnapshot(`
+        "/* layer: default */
+        .z-header{z-index:500;}"
+      `)
   })
 })

@@ -9,12 +9,17 @@
     "astro": "astro"
   },
   "dependencies": {
-    "vue": "^3.2.47"
+    "vue": "^3.3.4"
   },
   "devDependencies": {
-    "@astrojs/vue": "^2.1.1",
+    "@astrojs/vue": "^3.0.0",
+    "@iconify-json/logos": "^1.1.37",
     "@unocss/reset": "link:../../packages/reset",
-    "astro": "^2.4.1",
+    "astro": "^3.1.4",
     "unocss": "link:../../packages/unocss"
+  },
+  "stackblitz": {
+    "installDependencies": false,
+    "startCommand": "node .stackblitz.mjs && npm install && npm run dev"
   }
 }

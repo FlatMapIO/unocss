@@ -1,5 +1,5 @@
 import type { Rule } from '@unocss/core'
-import { globalKeywords, handler as h, makeGlobalStaticRules, positionMap } from '@unocss/preset-mini/utils'
+import { globalKeywords, h, makeGlobalStaticRules, positionMap } from '@unocss/preset-mini/utils'
 
 export const textTransforms: Rule[] = [
   // tailwind compat
@@ -33,7 +33,8 @@ export const writingOrientations: Rule[] = [
 
 export const screenReadersAccess: Rule[] = [
   [
-    'sr-only', {
+    'sr-only',
+    {
       'position': 'absolute',
       'width': '1px',
       'height': '1px',

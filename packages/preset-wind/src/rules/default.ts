@@ -1,5 +1,6 @@
 import type { Rule } from '@unocss/core'
 import * as _ from '@unocss/preset-mini/rules'
+import type { Theme } from '@unocss/preset-mini'
 import { container } from './container'
 import { backgroundStyles } from './background'
 import { filters } from './filters'
@@ -16,10 +17,11 @@ import { touchActions } from './touch-actions'
 import { scrolls } from './scrolls'
 import { columns } from './columns'
 import { placeholders } from './placeholder'
+import { viewTransition } from './view-transition'
 
 // _. indicates that the rule is from @unocss/preset-mini
 
-export const rules: Rule[] = [
+export const rules: Rule<Theme>[] = [
   _.cssVariables,
   cssVariables,
   _.cssProperty,
@@ -74,6 +76,7 @@ export const rules: Rule[] = [
   _.paddings,
   _.textAligns,
   _.textIndents,
+  _.textWraps,
   _.verticalAligns,
   _.fonts,
   _.textTransforms,
@@ -105,6 +108,7 @@ export const rules: Rule[] = [
   _.contents,
   placeholders,
   _.containerParent,
+  viewTransition,
 
   // should be the last
   _.questionMark,

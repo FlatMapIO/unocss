@@ -24,9 +24,39 @@ export async function getCSS(uno: UnoGenerator, utilName: string) {
   return css
 }
 
-export async function getPrettiedCSS(uno: UnoGenerator, util: string) {
+/**
+ * Credit to [@voorjaar](https://github.com/voorjaar)
+ *
+ * @see https://github.com/windicss/windicss-intellisense/issues/13
+ * @param str
+ */
+export function addRemToPxComment(str?: string, remToPixel = 16) {
+  if (!str)
+    return ''
+  if (remToPixel < 1)
+    return str
+  let index = 0
+  const output: string[] = []
+
+  while (index < str.length) {
+    const rem = str.slice(index).match(/(-?[\d.]+)rem(\s+\!important)?;/)
+    if (!rem || !rem.index)
+      break
+    const px = ` /* ${Number.parseFloat(rem[1]) * remToPixel}px */`
+    const end = index + rem.index + rem[0].length
+
+    output.push(str.slice(index, end))
+    output.push(px)
+    index = end
+  }
+  output.push(str.slice(index))
+  return output.join('')
+}
+
+export async function getPrettiedCSS(uno: UnoGenerator, util: string, remToPxRatio: number) {
   const result = (await uno.generate(new Set([util]), { preflights: false, safelist: false }))
-  const prettified = prettier.format(result.css, {
+  const css = addRemToPxComment(result.css, remToPxRatio)
+  const prettified = prettier.format(css, {
     parser: 'css',
     plugins: [parserCSS],
   })
@@ -37,12 +67,12 @@ export async function getPrettiedCSS(uno: UnoGenerator, util: string) {
   }
 }
 
-export async function getPrettiedMarkdown(uno: UnoGenerator, util: string) {
-  return `\`\`\`css\n${(await getPrettiedCSS(uno, util)).prettified}\n\`\`\``
+export async function getPrettiedMarkdown(uno: UnoGenerator, util: string, remToPxRatio: number) {
+  return `\`\`\`css\n${(await getPrettiedCSS(uno, util, remToPxRatio)).prettified}\n\`\`\``
 }
 
 function getCssVariables(code: string) {
-  const regex = /(?<key>--\S+?):\s*(?<value>.+?);/gm
+  const regex = /(?<key>--\S+?):\s*(?<value>.+?)\s*[!;]/gm
   const cssVariables = new Map<string, string>()
   for (const match of code.matchAll(regex)) {
     const key = match.groups?.key
@@ -121,4 +151,12 @@ export function getColorString(str: string) {
 export function isSubdir(parent: string, child: string) {
   const relative = path.relative(parent, child)
   return relative && !relative.startsWith('..') && !path.isAbsolute(relative)
+}
+
+export function isFulfilled<T>(result: PromiseSettledResult<T>): result is PromiseFulfilledResult<T> {
+  return result.status === 'fulfilled'
+}
+
+export function isRejected(result: PromiseSettledResult<unknown>): result is PromiseRejectedResult {
+  return result.status === 'rejected'
 }

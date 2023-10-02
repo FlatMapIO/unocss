@@ -31,6 +31,7 @@ export interface Theme {
   colors?: Colors
   fontFamily?: Record<string, string>
   fontSize?: Record<string, string | [string, string]>
+  fontWeight?: Record<string, string>
   lineHeight?: Record<string, string>
   letterSpacing?: Record<string, string>
   wordSpacing?: Record<string, string>
@@ -44,6 +45,7 @@ export interface Theme {
   duration?: Record<string, string>
   aria?: Record<string, string>
   data?: Record<string, string>
+  zIndex?: Record<string, string>
   // filters
   blur?: Record<string, string>
   dropShadow?: Record<string, string | string[]>

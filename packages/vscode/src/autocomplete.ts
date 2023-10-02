@@ -7,6 +7,7 @@ import { getCSS, getColorString, getPrettiedCSS, getPrettiedMarkdown, isSubdir }
 import { log } from './log'
 import type { ContextLoader } from './contextLoader'
 import { isCssId } from './integration'
+import { useConfigurations } from './configuration'
 
 const defaultLanguageIds = [
   'erb',
@@ -32,14 +33,16 @@ const defaultLanguageIds = [
   'astro',
   'rust',
 ]
-const delimiters = ['-', ':']
+const delimiters = ['-', ':', ' ', '"', '\'']
 
 class UnoCompletionItem extends CompletionItem {
   uno: UnoGenerator
+  value: string
 
-  constructor(label: string, kind: CompletionItemKind, uno: UnoGenerator) {
+  constructor(label: string, kind: CompletionItemKind, value: string, uno: UnoGenerator) {
     super(label, kind)
     this.uno = uno
+    this.value = value
   }
 }
 
@@ -50,11 +53,19 @@ export async function registerAutoComplete(
 ) {
   const allLanguages = await languages.getLanguages()
   const autoCompletes = new Map<UnocssPluginContext, UnocssAutocomplete>()
+  const { configuration, watchChanged, disposable } = useConfigurations(ext)
+
   contextLoader.events.on('contextReload', (ctx) => {
     autoCompletes.delete(ctx)
   })
+
   contextLoader.events.on('contextUnload', (ctx) => {
     autoCompletes.delete(ctx)
+  })
+
+  contextLoader.events.on('unload', (ctx) => {
+    autoCompletes.delete(ctx)
+    disposable.dispose()
   })
 
   function getAutocomplete(ctx: UnocssPluginContext) {
@@ -62,14 +73,16 @@ export async function registerAutoComplete(
     if (cached)
       return cached
 
-    const autocomplete = createAutocomplete(ctx.uno)
+    const autocomplete = createAutocomplete(ctx.uno, {
+      matchType: configuration.matchType,
+    })
 
     autoCompletes.set(ctx, autocomplete)
     return autocomplete
   }
 
-  async function getMarkdown(uno: UnoGenerator, util: string) {
-    return new MarkdownString(await getPrettiedMarkdown(uno, util))
+  async function getMarkdown(uno: UnoGenerator, util: string, remToPxRatio: number) {
+    return new MarkdownString(await getPrettiedMarkdown(uno, util, remToPxRatio))
   }
 
   function validateLanguages(targets: string[]) {
@@ -109,17 +122,20 @@ export async function registerAutoComplete(
 
         const result = await autoComplete.suggestInFile(code, doc.offsetAt(position))
 
-        log.appendLine(`🤖 ${id} | ${result.suggestions.slice(0, 10).map(v => `[${v[0]}, ${v[1]}]`).join(', ')}`)
+        // log.appendLine(`🤖 ${id} | ${result.suggestions.slice(0, 10).map(v => `[${v[0]}, ${v[1]}]`).join(', ')}`)
 
         if (!result.suggestions.length)
           return
 
         const completionItems: UnoCompletionItem[] = []
-        for (const [value, label] of result.suggestions) {
+
+        const suggestions = result.suggestions.slice(0, configuration.maxItems)
+
+        for (const [value, label] of suggestions) {
           const css = await getCSS(ctx!.uno, value)
           const colorString = getColorString(css)
           const itemKind = colorString ? CompletionItemKind.Color : CompletionItemKind.EnumMember
-          const item = new UnoCompletionItem(value, itemKind, ctx!.uno)
+          const item = new UnoCompletionItem(label, itemKind, value, ctx!.uno)
           const resolved = result.resolveReplacement(value)
 
           item.insertText = resolved.replacement
@@ -142,10 +158,11 @@ export async function registerAutoComplete(
     },
 
     async resolveCompletionItem(item) {
+      const remToPxRatio = configuration.remToPxRatio ? configuration.remToPxRatio : -1
       if (item.kind === CompletionItemKind.Color)
-        item.detail = await (await getPrettiedCSS(item.uno, item.label as string)).prettified
+        item.detail = await (await getPrettiedCSS(item.uno, item.value, remToPxRatio)).prettified
       else
-        item.documentation = await getMarkdown(item.uno, item.label as string)
+        item.documentation = await getMarkdown(item.uno, item.value, remToPxRatio)
       return item
     },
   }
@@ -167,13 +184,20 @@ export async function registerAutoComplete(
     return completeUnregister
   }
 
-  ext.subscriptions.push(workspace.onDidChangeConfiguration(async (event) => {
-    if (event.affectsConfiguration('unocss.languageIds')) {
-      ext.subscriptions.push(
-        registerProvider(),
-      )
-    }
-  }))
+  watchChanged(['languagesIds'], () => {
+    ext.subscriptions.push(
+      registerProvider(),
+    )
+  })
+
+  watchChanged([
+    'matchType',
+    'maxItems',
+    'remToPxRatio',
+    'remToPxPreview',
+  ], () => {
+    autoCompletes.clear()
+  })
 
   ext.subscriptions.push(
     registerProvider(),

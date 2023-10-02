@@ -1,7 +1,9 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import process from 'node:process'
 import { addComponentsDir, addPluginTemplate, defineNuxtModule, extendWebpackConfig, isNuxt2, isNuxt3 } from '@nuxt/kit'
 import WebpackPlugin from '@unocss/webpack'
+import type { VitePluginConfig } from '@unocss/vite'
 import VitePlugin from '@unocss/vite'
 import type { NuxtPlugin } from '@nuxt/schema'
 import { loadConfig } from '@unocss/config'
@@ -35,12 +37,15 @@ export default defineNuxtModule<UnocssNuxtOptions>({
     // preset shortcuts
     resolveOptions(options)
 
+    options.mode ??= 'global'
+    const InjectModes: VitePluginConfig['mode'][] = ['global', 'dist-chunk']
+
     if (options.autoImport) {
       addPluginTemplate({
         filename: 'unocss.mjs',
         getContents: () => {
           const lines = [
-            'import \'uno.css\'',
+            InjectModes.includes(options.mode) ? 'import \'uno.css\'' : '',
             isNuxt2()
               ? 'export default () => {}'
               : 'import { defineNuxtPlugin } from \'#imports\'; export default defineNuxtPlugin(() => {})',
@@ -63,6 +68,8 @@ export default defineNuxtModule<UnocssNuxtOptions>({
       configFile: options.configFile,
     }, [], options)
 
+    await nuxt.callHook('unocss:config', unoConfig)
+
     if (
       isNuxt3()
       && nuxt.options.builder === '@nuxt/vite-builder'
@@ -72,7 +79,8 @@ export default defineNuxtModule<UnocssNuxtOptions>({
       const preset = nuxt.options.postcss.plugins.cssnano.preset
       nuxt.options.postcss.plugins.cssnano = {
         preset: [preset?.[0] || 'default', Object.assign(
-          preset?.[1] || {}, { mergeRules: false, normalizeWhitespace: false, discardComments: false },
+          preset?.[1] || {},
+          { mergeRules: false, normalizeWhitespace: false, discardComments: false },
         )],
       }
     }

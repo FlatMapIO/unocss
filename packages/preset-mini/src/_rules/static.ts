@@ -1,5 +1,5 @@
 import type { Rule } from '@unocss/core'
-import { globalKeywords, handler as h, makeGlobalStaticRules } from '../utils'
+import { globalKeywords, h, makeGlobalStaticRules } from '../utils'
 
 const cursorValues = ['auto', 'default', 'none', 'context-menu', 'help', 'pointer', 'progress', 'wait', 'cell', 'crosshair', 'text', 'vertical-text', 'alias', 'copy', 'move', 'no-drop', 'not-allowed', 'grab', 'grabbing', 'all-scroll', 'col-resize', 'row-resize', 'n-resize', 'e-resize', 's-resize', 'w-resize', 'ne-resize', 'nw-resize', 'se-resize', 'sw-resize', 'ew-resize', 'ns-resize', 'nesw-resize', 'nwse-resize', 'zoom-in', 'zoom-out']
 const containValues = ['none', 'strict', 'content', 'size', 'inline-size', 'layout', 'style', 'paint']
@@ -15,7 +15,7 @@ export const displays: Rule[] = [
   ['flow-root', { display: 'flow-root' }],
   ['list-item', { display: 'list-item' }],
   ['hidden', { display: 'none' }],
-  [/^display-(.+)$/, ([, c]) => ({ display: h.bracket.cssvar.global(c) || c })],
+  [/^display-(.+)$/, ([, c]) => ({ display: h.bracket.cssvar.global(c) })],
 ]
 
 export const appearances: Rule[] = [
@@ -84,7 +84,7 @@ export const contentVisibility: Rule[] = [
 export const contents: Rule[] = [
   [/^content-(.+)$/, ([, v]) => ({ content: h.bracket.cssvar(v) })],
   ['content-empty', { content: '""' }],
-  ['content-none', { content: '""' }],
+  ['content-none', { content: 'none' }],
 ]
 
 export const breaks: Rule[] = [
@@ -92,6 +92,13 @@ export const breaks: Rule[] = [
   ['break-words', { 'overflow-wrap': 'break-word' }],
   ['break-all', { 'word-break': 'break-all' }],
   ['break-keep', { 'word-break': 'keep-all' }],
+  ['break-anywhere', { 'overflow-wrap': 'anywhere' }],
+]
+
+export const textWraps: Rule[] = [
+  ['text-wrap', { 'text-wrap': 'wrap' }],
+  ['text-nowrap', { 'text-wrap': 'nowrap' }],
+  ['text-balance', { 'text-wrap': 'balance' }],
 ]
 
 export const textOverflows: Rule[] = [
@@ -124,11 +131,9 @@ export const fontSmoothings: Rule[] = [
   ['antialiased', {
     '-webkit-font-smoothing': 'antialiased',
     '-moz-osx-font-smoothing': 'grayscale',
-    'font-smoothing': 'grayscale',
   }],
   ['subpixel-antialiased', {
     '-webkit-font-smoothing': 'auto',
     '-moz-osx-font-smoothing': 'auto',
-    'font-smoothing': 'auto',
   }],
 ]

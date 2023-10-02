@@ -15,7 +15,7 @@ function handleReset() {
   if (confirm('Reset all settings? It can NOT be undone.')) {
     inputHTML.value = defaultHTML
     customConfigRaw.value = defaultConfigRaw
-    options.value.transform = false
+    options.value.transformHtml = false
     customCSS.value = defaultCSS
   }
 }
@@ -78,7 +78,7 @@ function handleReset() {
         dark:i-ri-moon-line
         icon-btn
         title="Toggle Color Mode"
-        @click="toggleDark()"
+        @click="toggleDark"
       />
     </div>
   </div>

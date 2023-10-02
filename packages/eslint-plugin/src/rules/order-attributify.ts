@@ -1,14 +1,10 @@
-import { join } from 'node:path'
 import { ESLintUtils } from '@typescript-eslint/utils'
-import { createSyncFn } from 'synckit'
-import type { RuleListener } from '@typescript-eslint/utils/dist/ts-eslint'
+import type { RuleListener } from '@typescript-eslint/utils/ts-eslint'
 import type { TSESTree } from '@typescript-eslint/types'
 import MagicString from 'magic-string'
-import { distDir } from '../dirs'
+import { syncAction } from './_'
 
-const sortClasses = createSyncFn<(classes: string) => Promise<string>>(join(distDir, 'worker-sort.cjs'))
-
-const INGORE_ATTRIBUTES = ['style', 'class', 'classname', 'value']
+export const IGNORE_ATTRIBUTES = ['style', 'class', 'classname', 'value']
 
 export default ESLintUtils.RuleCreator(name => name)({
   name: 'order-attributify',
@@ -17,7 +13,7 @@ export default ESLintUtils.RuleCreator(name => name)({
     fixable: 'code',
     docs: {
       description: 'Order of UnoCSS attributes',
-      recommended: false,
+      recommended: 'recommended',
     },
     messages: {
       'invalid-order': 'UnoCSS attributes are not ordered',
@@ -31,12 +27,12 @@ export default ESLintUtils.RuleCreator(name => name)({
 
     const templateBodyVisitor: RuleListener = {
       VStartTag(node: any) {
-        const valueless = node.attributes.filter((i: any) => typeof i.key?.name === 'string' && !INGORE_ATTRIBUTES.includes(i.key?.name?.toLowerCase()) && i.value == null)
+        const valueless = node.attributes.filter((i: any) => typeof i.key?.name === 'string' && !IGNORE_ATTRIBUTES.includes(i.key?.name?.toLowerCase()) && i.value == null)
         if (!valueless.length)
           return
 
         const input = valueless.map((i: any) => i.key.name).join(' ').trim()
-        const sorted = sortClasses(input)
+        const sorted = syncAction('sort', input)
         if (sorted !== input) {
           context.report({
             node,
@@ -64,14 +60,14 @@ export default ESLintUtils.RuleCreator(name => name)({
       },
     }
 
-    // @ts-expect-error missing-types
+    // @ts-expect-error missing types
     if (context.parserServices == null || context.parserServices.defineTemplateBodyVisitor == null) {
       return scriptVisitor
     }
     else {
       // For Vue
-      // @ts-expect-error missing-types
+      // @ts-expect-error missing types
       return context.parserServices?.defineTemplateBodyVisitor(templateBodyVisitor, scriptVisitor)
     }
   },
-})
+}) as any as ESLintUtils.RuleWithMeta<[], ''>

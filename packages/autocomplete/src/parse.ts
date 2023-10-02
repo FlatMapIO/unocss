@@ -1,9 +1,13 @@
-import type { AutocompleteTemplatePart, ParsedAutocompleteTemplate } from './types'
+import { uniq } from '@unocss/core'
+import { Fzf } from 'fzf'
+import type { AutoCompleteMatchType, AutocompleteTemplatePart, ParsedAutocompleteTemplate } from './types'
+import { cartesian } from './utils'
 
 export const shorthands: Record<string, string> = {
-  num: `(${[0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 24, 36].join('|')})`,
-  percent: `(${Array.from({ length: 11 }, (_, i) => i * 10).join('|')})`,
   directions: '(x|y|t|b|l|r|s|e)',
+  num: `(${[0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 24, 36].join('|')})`,
+  percent: `(${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].join('|')})`,
+  percentage: `(${['10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'].join('|')})`,
 }
 
 export const ignoredThemeKeys = ['DEFAULT']
@@ -28,16 +32,23 @@ function handleRegexMatch(
     onNotMatched(str.slice(lastIndex), lastIndex, str.length)
 }
 
-export function parseAutocomplete(template: string, theme: any = {}): ParsedAutocompleteTemplate {
+export function parseAutocomplete(template: string, theme: any = {}, extraShorthands: Record<string, string> = {}): ParsedAutocompleteTemplate {
   const parts: AutocompleteTemplatePart[] = []
 
+  const newShorthands = {
+    ...shorthands,
+    ...extraShorthands,
+  }
+
   template = template.replace(/<(\w+)>/g, (_, key) => {
-    if (!shorthands[key])
+    if (!newShorthands[key])
       throw new Error(`Unknown template shorthand: ${key}`)
-    return shorthands[key]
+    return newShorthands[key]
   })
 
   handleGroups(template)
+
+  const fzf = new Fzf(getAllCombination(parts))
 
   return {
     parts,
@@ -76,7 +87,7 @@ export function parseAutocomplete(template: string, theme: any = {}): ParsedAuto
       (m) => {
         parts.push({
           type: 'group',
-          values: m[1].split('|').sort((a, b) => b.length - a.length),
+          values: m[1].split('|'),
         })
       },
       (str) => {
@@ -85,7 +96,9 @@ export function parseAutocomplete(template: string, theme: any = {}): ParsedAuto
     )
   }
 
-  function suggest(input: string) {
+  function suggest(input: string, matchType: AutoCompleteMatchType = 'prefix') {
+    if (input.length > 1 && matchType === 'fuzzy')
+      return fzf.find(input).map(i => i.item)
     let rest = input
     let matched = ''
     let combinations: string[] = []
@@ -178,4 +191,37 @@ export function parseAutocomplete(template: string, theme: any = {}): ParsedAuto
     return combinations.map(i => matched + i)
       .filter(i => i.length >= input.length)
   }
+}
+
+function getValuesFromPartTemplate(part: AutocompleteTemplatePart): string[] {
+  if (part.type === 'static')
+    return [part.value]
+  if (part.type === 'theme') {
+    return part.objects.flatMap((i) => {
+      const keys = Object.keys(i).filter(i => i && i[0] !== '_')
+      for (const key in i) {
+        const value = i[key]
+        if (value === null || value === undefined)
+          continue
+        if (typeof value === 'object' && !Array.isArray(value)) {
+          const subKeys = getValuesFromPartTemplate({
+            type: 'theme',
+            objects: [value as Record<string, unknown>],
+          }).map(i => `${key}-${i}`)
+
+          keys.push(...subKeys)
+        }
+      }
+      return keys
+    })
+  }
+  if (part.type === 'group')
+    return [...part.values]
+  return []
+}
+
+function getAllCombination(parts: AutocompleteTemplatePart[]) {
+  const values = parts.map(i => getValuesFromPartTemplate(i))
+  const list = uniq(cartesian(values).flatMap(i => i.join('').replace('-DEFAULT', '')))
+  return list
 }

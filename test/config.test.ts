@@ -1,8 +1,8 @@
 import type { Preset, UserConfig } from '@unocss/core'
-import { createGenerator } from '@unocss/core'
+import { createGenerator, mergeConfigs } from '@unocss/core'
 import type { Theme } from '@unocss/preset-mini'
 import presetMini from '@unocss/preset-mini'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 
 describe('config', () => {
   const createUno = (userConfig: UserConfig) => {
@@ -131,5 +131,112 @@ describe('config', () => {
       /* layer: default */
       .text-yellow-500{color:yellow;}"
     `)
+  })
+
+  test('uniq presets', async () => {
+    const presetA: Preset = { name: 'presetA' }
+    const presetB: Preset = { name: 'presetB' }
+    const presetC: Preset = { name: 'presetC', presets: [presetA] }
+
+    const unoA = createGenerator({
+      presets: [
+        presetA,
+        presetB,
+        presetA,
+      ],
+    })
+
+    expect(unoA.config.presets.map(i => i.name)).toEqual(['presetA', 'presetB'])
+
+    const unoB = createGenerator({
+      presets: [
+        presetA,
+        presetB,
+        presetC,
+      ],
+    })
+
+    expect(unoB.config.presets.map(i => i.name)).toEqual(['presetA', 'presetB', 'presetC'])
+  })
+})
+
+describe('mergeConfigs', () => {
+  it('basic', () => {
+    expect(mergeConfigs([
+      {
+        shortcuts: {
+          foo: 'string',
+        },
+      },
+      {
+        shortcuts: [
+          {
+            bar: 'string',
+          },
+          [/a/i, () => 'a'],
+        ],
+      },
+    ]))
+      .toMatchInlineSnapshot(`
+        {
+          "shortcuts": [
+            {
+              "foo": "string",
+            },
+            {
+              "bar": "string",
+            },
+            [
+              /a/i,
+              [Function],
+            ],
+          ],
+        }
+      `)
+  })
+  it('theme', () => {
+    expect(mergeConfigs([
+      {
+        theme: {
+          fontSize: {
+            sm: ['0.875rem', '1.125rem'],
+            md: ['1.125rem', '1.5rem'],
+            lg: ['1.25rem', '1.5rem'],
+          },
+        },
+      },
+      {
+        theme: {
+          fontSize: {
+            sm: ['1rem', '1.125rem'],
+            xl: ['1.5rem', '1.75rem'],
+          },
+        },
+      },
+    ]))
+      .toMatchInlineSnapshot(`
+        {
+          "theme": {
+            "fontSize": {
+              "lg": [
+                "1.25rem",
+                "1.5rem",
+              ],
+              "md": [
+                "1.125rem",
+                "1.5rem",
+              ],
+              "sm": [
+                "1rem",
+                "1.125rem",
+              ],
+              "xl": [
+                "1.5rem",
+                "1.75rem",
+              ],
+            },
+          },
+        }
+      `)
   })
 })

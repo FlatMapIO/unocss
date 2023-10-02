@@ -1,7 +1,9 @@
+/* eslint-disable node/prefer-global/process */
 import reset from '@unocss/reset/tailwind.css'
 import type { LinksFunction, MetaFunction } from 'remix'
 import {
-  Links, LiveReload,
+  Links,
+  LiveReload,
   Meta,
   Outlet,
   Scripts,

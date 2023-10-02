@@ -15,16 +15,21 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
-    "lit": "^2.7.4"
+    "lit": "^2.8.0"
   },
   "devDependencies": {
-    "@iconify-json/logos": "^1.1.25",
+    "@iconify-json/logos": "^1.1.37",
     "@unocss/core": "link:../../packages/core",
     "@unocss/preset-attributify": "link:../../packages/preset-attributify",
     "@unocss/preset-icons": "link:../../packages/preset-icons",
-    "typescript": "^5.0.4",
+    "@unocss/preset-typography": "link:../../packages/preset-typography",
+    "typescript": "^5.2.2",
     "unocss": "link:../../packages/unocss",
-    "vite": "^4.3.5",
-    "vite-plugin-inspect": "^0.7.25"
+    "vite": "^4.4.9",
+    "vite-plugin-inspect": "^0.7.38"
+  },
+  "stackblitz": {
+    "installDependencies": false,
+    "startCommand": "node .stackblitz.mjs && npm install && npm run dev"
   }
 }

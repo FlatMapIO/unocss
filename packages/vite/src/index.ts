@@ -1,5 +1,6 @@
+import process from 'node:process'
 import type { Plugin } from 'vite'
-import type { UserConfigDefaults } from '@unocss/core'
+import type { UnocssPluginContext, UserConfigDefaults } from '@unocss/core'
 import UnocssInspector from '@unocss/inspector'
 import { createContext } from './integration'
 import { ChunkModeBuildPlugin } from './modes/chunk-build'
@@ -18,15 +19,23 @@ export * from './modes/global'
 export * from './modes/per-module'
 export * from './modes/vue-scoped'
 
-export function defineConfig<Theme extends {}>(config: VitePluginConfig<Theme>) {
+export function defineConfig<Theme extends object>(config: VitePluginConfig<Theme>) {
   return config
 }
 
-export default function UnocssPlugin<Theme extends {}>(
+export interface UnocssVitePluginAPI {
+  getContext(): UnocssPluginContext<VitePluginConfig>
+  getMode(): VitePluginConfig['mode']
+}
+
+export default function UnocssPlugin<Theme extends object>(
   configOrPath?: VitePluginConfig<Theme> | string,
   defaults: UserConfigDefaults = {},
 ): Plugin[] {
-  const ctx = createContext<VitePluginConfig>(configOrPath as any, defaults)
+  const ctx = createContext<VitePluginConfig>(configOrPath as any, {
+    envMode: process.env.NODE_ENV === 'development' ? 'dev' : 'build',
+    ...defaults,
+  })
   const inlineConfig = (configOrPath && typeof configOrPath !== 'string') ? configOrPath : {}
   const mode = inlineConfig.mode ?? 'global'
 
@@ -34,6 +43,13 @@ export default function UnocssPlugin<Theme extends {}>(
     ConfigHMRPlugin(ctx),
     ...createTransformerPlugins(ctx),
     ...createDevtoolsPlugin(ctx),
+    {
+      name: 'unocss:api',
+      api: <UnocssVitePluginAPI>{
+        getContext: () => ctx,
+        getMode: () => mode,
+      },
+    },
   ]
 
   if (inlineConfig.inspector !== false)

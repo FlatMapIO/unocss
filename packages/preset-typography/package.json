@@ -1,6 +1,6 @@
 {
   "name": "@unocss/preset-typography",
-  "version": "0.52.0",
+  "version": "0.56.4",
   "description": "Typography preset for UnoCSS",
   "author": "Jeff Yang",
   "license": "MIT",
@@ -21,8 +21,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.cjs",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
     }
   },
   "main": "dist/index.cjs",

@@ -1,6 +1,6 @@
 {
   "name": "@unocss/preset-web-fonts",
-  "version": "0.52.0",
+  "version": "0.56.4",
   "description": "Web Fonts support for Uno CSS",
   "author": "Anthony Fu <anthonyfu117@hotmail.com>",
   "license": "MIT",
@@ -25,16 +25,16 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.cjs",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
     }
   },
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
-    "dist",
-    "*.css"
+    "*.css",
+    "dist"
   ],
   "scripts": {
     "build": "unbuild",
@@ -42,6 +42,6 @@
   },
   "dependencies": {
     "@unocss/core": "workspace:*",
-    "ofetch": "^1.0.1"
+    "ofetch": "^1.3.3"
   }
 }

@@ -9,8 +9,14 @@
     "astro": "astro"
   },
   "devDependencies": {
+    "@iconify-json/logos": "^1.1.37",
     "@unocss/reset": "link:../../packages/reset",
-    "astro": "^2.4.1",
+    "astro": "^3.1.4",
+    "canvas-confetti": "^1.6.0",
     "unocss": "link:../../packages/unocss"
+  },
+  "stackblitz": {
+    "installDependencies": false,
+    "startCommand": "node .stackblitz.mjs && npm install && npm run dev"
   }
 }

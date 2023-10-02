@@ -1,4 +1,5 @@
 import { existsSync, promises as fs } from 'node:fs'
+import process from 'node:process'
 import { basename, dirname, normalize, relative, resolve } from 'pathe'
 import fg from 'fast-glob'
 import { consola } from 'consola'
@@ -46,8 +47,10 @@ export async function build(_options: CliOptions) {
     }),
   )
 
-  consola.log(green(`${name} v${version}`))
-  consola.start(`UnoCSS ${options.watch ? 'in watch mode...' : 'for production...'}`)
+  if (!options.stdout) {
+    consola.log(green(`${name} v${version}`))
+    consola.start(`UnoCSS ${options.watch ? 'in watch mode...' : 'for production...'}`)
+  }
 
   const debouncedBuild = debounce(
     async () => {
@@ -57,7 +60,7 @@ export async function build(_options: CliOptions) {
   )
 
   const startWatcher = async () => {
-    if (!options.watch)
+    if (options.stdout || !options.watch)
       return
     const { patterns } = options
 
@@ -104,27 +107,28 @@ export async function build(_options: CliOptions) {
           .then((transformsRes) => {
             resolve({ id, code, transformedCode: transformsRes?.code || transformedCode })
           })
-      })))
+      })),
+    )
   }
 
   async function generate(options: ResolvedCliOptions) {
     const sourceCache = Array.from(fileCache).map(([id, code]) => ({ id, code }))
-
-    const outFile = resolve(options.cwd || process.cwd(), options.outFile ?? 'uno.css')
 
     const preTransform = await transformFiles(sourceCache, 'pre')
     const defaultTransform = await transformFiles(preTransform)
     const postTransform = await transformFiles(defaultTransform, 'post')
 
     // update source file
-    await Promise.all(
-      postTransform
-        .filter(({ transformedCode }) => !!transformedCode)
-        .map(({ transformedCode, id }) => new Promise<void>((resolve) => {
-          if (existsSync(id))
-            fs.writeFile(id, transformedCode as string, 'utf-8').then(resolve)
-        })),
-    )
+    if (options.writeTransformed) {
+      await Promise.all(
+        postTransform
+          .filter(({ transformedCode }) => !!transformedCode)
+          .map(({ transformedCode, id }) => new Promise<void>((resolve) => {
+            if (existsSync(id))
+              fs.writeFile(id, transformedCode as string, 'utf-8').then(resolve)
+          })),
+      )
+    }
 
     const { css, matched } = await ctx.uno.generate(
       [...postTransform.map(({ code, transformedCode }) => transformedCode ?? code)].join('\n'),
@@ -134,6 +138,12 @@ export async function build(_options: CliOptions) {
       },
     )
 
+    if (options.stdout) {
+      process.stdout.write(css)
+      return
+    }
+
+    const outFile = resolve(options.cwd || process.cwd(), options.outFile ?? 'uno.css')
     const dir = dirname(outFile)
     if (!existsSync(dir))
       await fs.mkdir(dir, { recursive: true })

@@ -72,11 +72,11 @@
 .animate-normal{animation-direction:normal;}
 .animate-reverse{animation-direction:reverse;}
 .animate-count-2\.4{animation-iteration-count:2.4;}
-.animate-iteration-2{animation-iteration-count:2;}
-.animate-iteration-count-\[2\,4\,infinity\]{animation-iteration-count:count,[2,4,infinity];}
-.animate-iteration-count-\$variable{animation-iteration-count:count,$variable;}
-.animate-iteration-count-2{animation-iteration-count:count,2;}
-.animate-iteration-count-2-4-infinity{animation-iteration-count:count,2,4,infinity;}
+.animate-iteration-2,
+.animate-iteration-count-2{animation-iteration-count:2;}
+.animate-iteration-count-\[2\,4\,infinity\],
+.animate-iteration-count-2-4-infinity{animation-iteration-count:2,4,infinity;}
+.animate-iteration-count-\$variable{animation-iteration-count:var(--variable);}
 .animate-paused,
 .animate-play-paused{animation-play-state:paused;}
 .animate-play-state-running,
@@ -352,6 +352,8 @@
 .backdrop-filter-revert{-webkit-backdrop-filter:revert;backdrop-filter:revert;}
 .placeholder-inherit::placeholder{color:inherit;}
 .placeholder-red-400::placeholder{--un-placeholder-opacity:1;color:rgba(248,113,113,var(--un-placeholder-opacity));}
+.view-transition-foo{view-transition-name:foo;}
+.view-transition-none{view-transition-name:none;}
 @media (hover: hover) and (pointer: fine){
 .\@hover-text-red:hover{--un-text-opacity:1;color:rgba(248,113,113,var(--un-text-opacity));}
 [open] .\@hover\:\[\[open\]_\&\]\:text-blue:hover{--un-text-opacity:1;color:rgba(96,165,250,var(--un-text-opacity));}
